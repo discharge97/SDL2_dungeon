@@ -6,6 +6,9 @@ int spawner_spawn(entity_t* e, state_t* state) {
 	if (!state->spawn_enemies) {
 		return 0;
 	}
+
+
+
 	if (E_DEF_MAX_ENEMIES(state->levelc) <= e->spawner.enemy_count) {
 		return 0;
 	}
@@ -31,7 +34,7 @@ entity_t spawner_new() {
 	e.y = 0;
 	e.hp = 1000;
 	e.type = E_SPAWNER;
-	e.spawner.rate = 3;
+	e.spawner.rate = 4;
 	e.spawner.next_spawn = E_DEF_NEXT_SPAWN;
 	e.spawner.enemy_count = 0;
 	return e;

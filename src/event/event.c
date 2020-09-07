@@ -1,18 +1,24 @@
 #include "event/event.h"
 
 void ev_game_start(state_t* state, ...) {
-	entity_t player;
-	entity_t spawner;
+    entity_t player;
+    entity_t spawner;
 
-	state->entities = alist_new(sizeof(entity_t));
-	state->render_graph = 0;
-	state->render_graph_h = 0;
+    state->entities = alist_new(sizeof(entity_t));
+    state->render_graph = 0;
+    state->render_graph_h = 0;
 
-	state->spawn_enemies = 1;
+    state->spawn_enemies = 1;
 
-	player = player_new(1, 1);
-	memcpy(&state->player, &player, sizeof(entity_t));
-	spawner = spawner_new();
+    player = player_new(1, 1);
+    memcpy(&state->player, &player, sizeof(entity_t));
+    spawner = spawner_new();
+
+    spawner.spawner.rate -= spawner.spawner.rate - state->levelc;
+    if (spawner.spawner.rate < 1) {
+        spawner.spawner.rate = 1;
+    }
+
 	alist_add(state->entities, &spawner);
 
 	state->level.doodads = NULL;
@@ -21,9 +27,6 @@ void ev_game_start(state_t* state, ...) {
 	state->light_mode = L_LOS;
 	state->ren_mode = REN_ALL;
 }
-
-//void ev_level_start(state_t* state, ...) {
-//}
 
 void ev_level_restart(state_t* state, ...) {
 	#define LIGHT_COUNT 10
@@ -34,6 +37,9 @@ void ev_level_restart(state_t* state, ...) {
 	state->player.x = 1;
 	state->player.y = 1;
 	maze_clear(&state->level);
+    state->player.hp = E_DEF_HP;
+    state->player.player.dmg = E_DEF_DMG;
+
 	maze_t maze = maze_new(state->player.x, state->player.y);
 	memcpy(&state->level, &maze, sizeof(maze_t));
 	stack_destroy(solve_astar(state->level.mgraph));

@@ -5,7 +5,7 @@ entity_t enemy_new(int x, int y, void* origin) {
 	newenemy.x = x;
 	newenemy.y = y;
 	newenemy.type = E_ENEMY;
-	newenemy.next_move = E_DEF_NEXT_MOVE;
+	newenemy.next_move = E_DEF_NEXT_MOVE1;
 	newenemy.hp = E_DEF_HP;
 
 	newenemy.enemy.mgraph = NULL;
@@ -13,6 +13,8 @@ entity_t enemy_new(int x, int y, void* origin) {
 	newenemy.enemy.next_search = E_DEF_NEXT_SEARCH;
 	newenemy.enemy.path = NULL;
 	newenemy.enemy.origin = origin;
+	newenemy.enemy.dmg = E_DEF_DMG;
+	newenemy.sprite = (rand() % 2 == 0)?SPR_ENEMY1:SPR_ENEMY2;
 	return newenemy;
 }
 
@@ -24,7 +26,7 @@ void enemy_randmove(entity_t* e, char const* lvl, int width, int bound) {
 		e->next_move -= (rand() % 3) + 1;
 		return;
 	} else {
-		e->next_move = E_DEF_NEXT_MOVE;
+		e->next_move = E_DEF_NEXT_MOVE1;
 	}
 	while (!entity_move(e, lvl, width, bound, RAND_DIR));
 }
@@ -54,7 +56,7 @@ enemy_search(entity_t* e, entity_t* tar, maze_t const* level, int force_search) 
 	e->enemy.path = path;
 }
 
-void enemy_fpath(entity_t* e, char const* lvl, int width, int bound) {
+void enemy_fpath(entity_t* e, char const* lvl, int width, int bound, int level_index) {
 	assert(e != (void*) 0);
 	assert(e->type == E_ENEMY);
 	if (e->enemy.path == NULL) {
@@ -65,7 +67,22 @@ void enemy_fpath(entity_t* e, char const* lvl, int width, int bound) {
 		e->next_move -= (rand() % 3) + 1;
 		return;
 	} else {
-		e->next_move = E_DEF_NEXT_MOVE;
+
+        switch (level_index) {
+            case 0:
+                e->next_move = E_DEF_NEXT_MOVE1;
+                break;
+            case 1:
+                e->next_move = E_DEF_NEXT_MOVE1;
+                break;
+            case 2:
+                e->next_move = E_DEF_NEXT_MOVE2;
+                break;
+            default:
+                e->next_move = E_DEF_NEXT_MOVE3;
+                break;
+        }
+
 	}
 
 
@@ -110,7 +127,7 @@ void enemy_lockmove(entity_t* e, entity_t* e1, char const* lvl, int width, int b
 		e->next_move -= (rand() % 3) + 1;
 		return;
 	} else {
-		e->next_move = E_DEF_NEXT_MOVE;
+		e->next_move = E_DEF_NEXT_MOVE1;
 	}
 
 	if (abs(dx) >= abs(dy)) {

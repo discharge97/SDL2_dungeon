@@ -127,7 +127,7 @@ maze_t maze_new(int start_x, int start_y) {
     maze.doodads = generate_doodads(maze.maze);
     maze.pickups = generate_pickups(maze.maze);
 	maze.maze[1 * LVL_W + 1] = B_FLOOR;
-	// avoiding x % 0 SIGFPE
+//	 avoiding x % 0 SIGFPE
 	if (WRLD_H == 1 || WRLD_W == 1) {
 		while (maze.maze[(y = (rand() % LVL_H)) * LVL_W + (x = (rand() % LVL_W))] ==
 			   B_WALL);

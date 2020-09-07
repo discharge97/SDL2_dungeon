@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <maze.h>
+#include <sprites.h>
 
 #include "structs/arraylist.h"
 #include "util.h"
@@ -14,10 +15,15 @@
 #define E_DEF_NEXT_SEARCH 200
 #define E_DEF_NEXT_SPAWN 400
 #define E_DEF_MAX_ENEMIES(x) ((x) * 2 + 5)
-#define E_DEF_NEXT_MOVE 40
+#define E_DEF_NEXT_MOVE1 40
+#define E_DEF_NEXT_MOVE2 30
+#define E_DEF_NEXT_MOVE3 20
 #define E_DEF_PNEXT_MOVE 5
 #define E_DEF_PNEXT_SHOT 20
 #define E_DEF_DMG 40.0f
+
+#define P_HP_LEVEL1 200
+#define P_DMG_LEVEL1 200
 
 #define RAND_DIR ((rand() % 3) + 1)
 enum dir {
@@ -41,6 +47,7 @@ typedef struct player {
 	enum dir dir;
 	int next_shot;
 	float dmg;
+	int lvl;
 } player_t;
 
 typedef struct light {
@@ -52,6 +59,7 @@ typedef struct enemy {
 	struct mgraph* mgraph;
 	astack_t* path;
 	void* origin;
+	float dmg;
 } enemy_t;
 
 typedef struct spawner {
@@ -63,6 +71,7 @@ typedef struct spawner {
 typedef struct pew {
 	enum dir dir;
 	float dmg;
+	int lvl;
 } pew_t;
 
 typedef struct entity {
@@ -70,6 +79,7 @@ typedef struct entity {
 	int y;
 	float hp;
 	int next_move;
+	enum sprites sprite;
 	union {
 		player_t player;
 		enemy_t enemy;

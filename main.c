@@ -42,6 +42,16 @@ Mix_Chunk *shoot;
 Mix_Chunk *step;
 short pauseGame = 0;
 short menu = 1;
+short highscore=0;
+
+void saveCurrPlayer(char *name, int score){
+    FILE* file = fopen("scores.txt", "a");
+    char line[256];
+    int i= 0;
+
+    sprintf(line,"%s %d\n", name, score);
+    fputs(line, file);
+}
 
 int main(int argc, char** argv) {
 	volatile static int running = 1;
@@ -52,6 +62,10 @@ int main(int argc, char** argv) {
     static SDL_Texture* texture;
     static SDL_Texture* texMenu;
 	static state_t state;
+	static char name[32];
+
+	printf("Name: ");
+	scanf("%s", name);
 
 	maze_test_macros();
 	signal(SIGINT, sig_handler);
@@ -138,6 +152,7 @@ int main(int argc, char** argv) {
                           WIDTH / 2 - 70, HEIGHT / 2, NULL);
             }
         }else {
+            SDL_RenderClear(renderer);
 		    mainMenu(renderer, texMenu);
 		}
 
@@ -155,16 +170,37 @@ int main(int argc, char** argv) {
 	Mix_CloseAudio();
 	TTF_Quit();
 	SDL_Quit();
+	saveCurrPlayer(name, state.score);
 	return 0;
+}
+
+void drawHighScores(SDL_Renderer *renderer, SDL_Texture *tex,  TTF_Font *font){
+    draw_text(renderer, font, "Highscore", WIDTH / 2 - 70, 75, NULL);
+
+    FILE* file = fopen("scores.txt", "r");
+    char line[256] = {'\0'};
+    int i= 0;
+
+    while (fgets(line, sizeof(line), file)) {
+        line[strlen(line) - 1] = '\0';
+        draw_text(renderer, font, line, WIDTH / 2 - 70, 150 + i * 20, NULL);
+        i++;
+    }
 }
 
 void mainMenu(SDL_Renderer *renderer, SDL_Texture *tex) {
 
     TTF_Font *font = TTF_OpenFont(FONT_RES, 64);
-
     SDL_RenderCopy(renderer, tex, NULL, NULL);
-    draw_text(renderer, font, "Start Game", WIDTH / 2 - 70,HEIGHT / 2 - 150, NULL);
-    draw_text(renderer, font, "Exit Game", WIDTH / 2 - 67,HEIGHT / 2, NULL);
+
+    if(highscore == 1){
+        draw_text(renderer, font, "Back", 50, 50, NULL);
+        drawHighScores(renderer, tex, font);
+    }else {
+        draw_text(renderer, font, "Start Game", WIDTH / 2 - 70, HEIGHT / 2 - 150, NULL);
+        draw_text(renderer, font, "Highscore", WIDTH / 2 - 70, HEIGHT / 2 - 75, NULL);
+        draw_text(renderer, font, "Exit Game", WIDTH / 2 - 67, HEIGHT / 2, NULL);
+    }
 
 }
 
@@ -208,18 +244,11 @@ void Input(state_t* state, SDL_Event* ev, volatile int* running) {
 					overlay_solution(state->level.maze, state->player.x, state->player.y, state->level.exit_x,
 									 state->level.exit_y);
 					break;
-				case SDL_SCANCODE_G:
-//					state->render_graph = !state->render_graph;
-//					state_change_graph(state, 0);
-					break;
 				case SDL_SCANCODE_N:
 					state->spawn_enemies = !state->spawn_enemies;
 					if (!state->spawn_enemies) {
 						event_dispatch(state, EV_ENEMY_DESTROY, ev_enemies_destroy);
 					}
-					break;
-				case SDL_SCANCODE_H:
-					state->render_graph_h = !state->render_graph_h;
 					break;
 				case SDL_SCANCODE_L:
 					state_change_light(state, 1);
@@ -261,12 +290,19 @@ void Input(state_t* state, SDL_Event* ev, volatile int* running) {
 			}
 			break;
         case SDL_MOUSEBUTTONDOWN:
-
-            if(ev->button.button == SDL_BUTTON_LEFT){
-                if(ev->button.y >= HEIGHT/2 - 170 && ev->button.y <= HEIGHT / 2 - 130){
-                    menu = 0;
-                }else if (ev->button.y >= HEIGHT/2 - 20 && ev->button.y <= HEIGHT / 2 + 20){
-                    menu = -1;
+            if(!highscore){
+                if(ev->button.button == SDL_BUTTON_LEFT){
+                    if(ev->button.y >= HEIGHT/2 - 170 && ev->button.y <= HEIGHT / 2 - 130){
+                        menu = 0;
+                    }else if (ev->button.y >= HEIGHT/2 - 20 && ev->button.y <= HEIGHT / 2 + 20){
+                        menu = -1;
+                    }else if(ev->button.y >= HEIGHT/2 - 95 && ev->button.y <= HEIGHT / 2 - 55) {
+                        highscore = 1;
+                    }
+                }
+            }else {
+                if(ev->button.button == SDL_BUTTON_LEFT && (ev->button.y >= 30 && ev->button.y <= 70)) {
+                    highscore = 0;
                 }
             }
             break;
@@ -338,19 +374,25 @@ void Update(state_t* state, double delta_time) {
 							   time(0) - state->start_time);
 					}
 					enemy_search(e1, &(state->player), &state->level, 0);
-					enemy_fpath(e1, state->level.maze, state->level.w, B_WALL);
+					enemy_fpath(e1, state->level.maze, state->level.w, B_WALL, state->levelc);
 					if (state->player.x == e1->x && state->player.y == e1->y) {
-						event_dispatch(state, EV_GAME_RESTART, ev_game_restart);
+					    state->player.hp-=e1->enemy.dmg;
+					    player_knockback(&state->player, &state->level);
 					}
 				}
 				break;
 			case E_SPAWNER:
-				spawner_spawn(e1, state);
+                spawner_spawn(e1, state);
+                break;
 			default:
 				break;
 		}
 	}
 	// processing player
+    if (state->player.hp <= 0) {
+        event_dispatch(state, EV_GAME_RESTART, ev_game_restart);
+    }
+
 	if (state->player.next_move > 0) {
 		state->player.next_move--;
 	}
@@ -360,6 +402,8 @@ void Update(state_t* state, double delta_time) {
 	if (state->player.x == state->level.exit_x && state->player.y == state->level.exit_y) {
 		event_dispatch(state, EV_LEVEL_NEXT, ev_level_next);
 	}
+
+
 }
 
 void Render(state_t* state, SDL_Renderer* renderer, SDL_Texture* tex, TTF_Font* font) {
@@ -480,14 +524,14 @@ void Render(state_t* state, SDL_Renderer* renderer, SDL_Texture* tex, TTF_Font* 
 					if (x + xoff == e->x && y + yoff == e->y) {
 						switch (e->type) {
 							case E_ENEMY:
-								load_sprite(SPR_ENEMY1, (spr_rect*) &src);
+								load_sprite(e->sprite, (spr_rect*) &src);
 								SDL_SetTextureColorMod(tex, light, light * 0.8 * (e->hp / E_DEF_HP),
 													   light * 0.5 * (e->hp / E_DEF_HP));
 								SDL_RenderCopy(renderer, tex, &src, &dest);
 								SDL_SetTextureColorMod(tex, light, light * 0.8, light * 0.5);
 								break;
 							case E_PEW:
-								load_sprite(SPR_FBOY, (spr_rect*) &src);
+								load_sprite(e->sprite, (spr_rect*) &src);
 								dest.y -= 10;
 								SDL_RenderCopy(renderer, tex, &src, &dest);
 								dest.y += 10;
@@ -510,7 +554,7 @@ void Render(state_t* state, SDL_Renderer* renderer, SDL_Texture* tex, TTF_Font* 
 
 			// rendering player
 			if (x + xoff == state->player.x && y + yoff == state->player.y) {
-				load_sprite(SPR_PLAYER, (spr_rect*) &src);
+				load_sprite(state->player.sprite, (spr_rect*) &src);
 				SDL_RenderCopy(renderer, tex, &src, &dest);
 			}
 

@@ -13,4 +13,6 @@ extern void player_shoot(entity_t* e, alist_t* entities);
 
 extern void player_move(entity_t*, SDL_Scancode, maze_t* level);
 
+extern void player_knockback(entity_t *e, maze_t *lvl);
+
 #endif //AGAME_PLAYER_H

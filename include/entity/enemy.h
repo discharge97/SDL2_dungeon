@@ -11,7 +11,7 @@ void enemy_search(entity_t* e, entity_t* tar, maze_t const* level, int force_sea
 
 void enemy_randmove(entity_t* e, char const* lvl, int width, int bound);
 
-void enemy_fpath(entity_t* e, char const* lvl, int width, int bound);
+void enemy_fpath(entity_t* e, char const* lvl, int width, int bound, int level_index);
 
 void enemy_lockmove(entity_t* e, entity_t* e1, char const* lvl, int width, int bound);
 
