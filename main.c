@@ -177,7 +177,7 @@ int main(int argc, char** argv) {
 void drawHighScores(SDL_Renderer *renderer, SDL_Texture *tex,  TTF_Font *font){
     draw_text(renderer, font, "Highscore", WIDTH / 2 - 70, 75, NULL);
 
-    FILE* file = fopen("scores.txt", "r");
+    FILE* file = fopen("scores.txt", "a");
     char line[256] = {'\0'};
     int i= 0;
 
